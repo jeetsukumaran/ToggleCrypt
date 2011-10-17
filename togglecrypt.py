@@ -11,7 +11,7 @@
 ###############################################################################
 
 """
-Permanently encrypts/decryptss plaintext files using AES/Rijndael (the
+Permanently encrypts/decrypts plaintext files using AES/Rijndael (the
 '--encrypt' or '--decrypt' operations); temporarily decrypts encrypted
 files for editing or viewing on standard output (the '--checkout' or
 '--show' operations).
@@ -25,6 +25,7 @@ import hashlib
 import argparse
 import tempfile
 import subprocess
+import re
 
 __version__ = "1.0.0"
 __author__ = "Jeet Sukumaran"
@@ -823,17 +824,19 @@ def main():
     # operation arguments
     operation_args = parser.add_argument_group("operation")
     op_commands = [
-            ["encrypt", "-e", "encrypt file content and replace original file with encrypted content"],
-            ["show", "-s", "read and decrypt file content, and print to standard output (original file will not be changed)"],
-            ["checkout", "-c", "read and decrypt file content, and load in temporary file for editing; if saved, re-encrypt and replace original file content"],
-            ["decrypt", "-d", "decrypt file content and replace original file with decrypted content"],
+            ["encrypt", "-e", "store_true", False, "encrypt file content and replace original file with encrypted content"],
+            ["show", "-s", "store_true", False, "read and decrypt file content, and print to standard output (original file will not be changed)"],
+            ["checkout", "-c", "store_true", False, "read and decrypt file content, and load in temporary file for editing; if saved, re-encrypt and replace original file content"],
+            ["grep", "-g", "store", None, "read and decrypt file content, and and grep for pattern specified by '-p/--pattern' option"],
+            ["decrypt", "-d", "store_true", False, "decrypt file content and replace original file with decrypted content"],
             ]
     for op_command in op_commands:
         operation_args.add_argument(
                 "--{}".format(op_command[0]),
                 op_command[1],
-                action="store_true",
-                help=op_command[2])
+                action=op_command[2],
+                default=op_command[3],
+                help=op_command[4])
 
     # passphrase arguments
     passphrase_args = parser.add_argument_group("passphrase")
@@ -847,6 +850,14 @@ def main():
                         default=None,
                         metavar="STRING",
                         help="use STRING as the passphrase")
+
+    # grep_args =  parser.add_argument_group('grep')
+    # grep_args.add_argument("--pattern", "-p",
+    #                     action="store",
+    #                     default=None,
+    #                     metavar="REGEXP",
+    #                     help="pattern to use when grepping ('-g'/'--grep' operation)")
+
     editor_args =  parser.add_argument_group('editor/viewer')
     editor_args.add_argument("--editor-command",
                         action="store",
@@ -874,6 +885,10 @@ def main():
     if len(args.filepaths) < 1:
         send_message("need to specify path to one or more input files")
         sys.exit(1)
+
+    # if args.grep and args.pattern is None:
+    #     send_message("need to specify pattern using '-p' or '--pattern' option when grepping")
+    #     sys.exit(1)
 
     # get crypt key
     if args.passphrase:
@@ -948,6 +963,18 @@ def main():
             ciphertext = open(filepath, "rb").read()
             plaintext = decryptData(cryptkey, ciphertext)
             sys.stdout.write(plaintext)
+    elif args.grep:
+        pattern = re.compile(args.grep)
+        for fidx, filepath in enumerate(args.filepaths):
+            if not os.path.exists(filepath):
+                send_warning("file not found: '{}'".format(filepath))
+                continue
+            send_info("searching file: '{}'".format(filepath))
+            ciphertext = open(filepath, "rb").read()
+            plaintext = decryptData(cryptkey, ciphertext)
+            for lidx, line in enumerate(plaintext.split("\n")):
+                if pattern.findall(line):
+                    sys.stdout.write("   [{}:{}] {}\n".format(filepath, lidx+1, line))
 
 # Front-end/user interaction
 #############################################################################
