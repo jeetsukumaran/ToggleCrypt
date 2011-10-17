@@ -13,8 +13,8 @@
 """
 Permanently encrypts/decryptss plaintext files using AES/Rijndael (the
 '--encrypt' or '--decrypt' operations); temporarily decrypts encrypted
-files for editing or viewing on standard output (the '--edit' or '--show'
-operations).
+files for editing or viewing on standard output (the '--checkout' or
+'--show' operations).
 """
 
 import os
@@ -825,7 +825,7 @@ def main():
     op_commands = [
             ["encrypt", "-e", "encrypt file content and replace original file with encrypted content"],
             ["show", "-s", "read and decrypt file content, and print to standard output (original file will not be changed)"],
-            ["edit", "-t", "read and decrypt file content, and load in temporary file for editing; if saved, re-encrypt and replace original file content"],
+            ["checkout", "-c", "read and decrypt file content, and load in temporary file for editing; if saved, re-encrypt and replace original file content"],
             ["decrypt", "-d", "decrypt file content and replace original file with decrypted content"],
             ]
     for op_command in op_commands:
@@ -921,7 +921,7 @@ def main():
             destf.write(plaintext)
             destf.flush()
             destf.close()
-    elif args.edit:
+    elif args.checkout:
         for filepath in args.filepaths:
             if not os.path.exists(filepath):
                 send_warning("file not found: '{}'".format(filepath))
