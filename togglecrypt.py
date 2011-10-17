@@ -824,8 +824,8 @@ def main():
     operation_args = parser.add_argument_group("operation")
     op_commands = [
             ["encrypt", "-e", "encrypt file content and replace original file with encrypted content"],
-            ["show", "-s", "read, decrypt, and display file content on standard output (original file is not changed)"],
-            ["edit", "-t", "read, decrypt, and load file content in temporary file for editing; if saved, re-encrypt and replace original file content"],
+            ["show", "-s", "read and decrypt file content, and print to standard output (original file will not be changed)"],
+            ["edit", "-t", "read and decrypt file content, and load in temporary file for editing; if saved, re-encrypt and replace original file content"],
             ["decrypt", "-d", "decrypt file content and replace original file with decrypted content"],
             ]
     for op_command in op_commands:
